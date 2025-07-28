@@ -18,15 +18,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       - name: Lint code
-        run: echo "Linting repository" # To-do: Add real linting
+        run: echo "Linting repository"
       - name: Run unit tests
-        run: echo "Running unit tests" # To-do: Add real tests
+        run: echo "Running unit tests"
 
   build-and-push-ecr-image:
     name: Continuous Delivery
     needs: integration
     runs-on: ubuntu-latest
-    # This 'outputs' block defines what data this job will send to other jobs
     outputs:
       image_uri: ${{ steps.build-image.outputs.image_uri }}
     steps:
@@ -36,7 +35,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}     # <-- FIXED HERE
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to Amazon ECR
         id: login-ecr
@@ -44,15 +43,12 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
-          # Using the secret for the registry URL as seen in your screenshot
           ECR_REGISTRY: ${{ secrets.AWS_ECR_LOGIN_URL }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build and push the image
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          # Set the output for other jobs to use
           echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   Continuous-Deployment:
@@ -64,7 +60,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}     # <-- FIXED HERE
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Login to Amazon ECR
         id: login-ecr
